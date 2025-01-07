@@ -5,46 +5,46 @@ from typing import Iterable, Protocol
 
 import redis
 
-from .datagen import MarketOrder
-
 
 class Stream(Protocol):
     def consume(self):
         pass
 
-    def produce(
-        self, data: Iterable[MarketOrder], interval: float = 0.1, *args, **kwargs
-    ):
+    def produce(self, data: Iterable[dict], interval: float = 0.1, *args, **kwargs):
         pass
 
 
 class SocketStream(Stream):
-    def __init__(self, host: str = "127.0.0.1", port: int = 50000):
+    def __init__(self, host: str = "127.0.0.1", port: int = 5000):
         self.host = host
         self.port = port
 
     def consume(self):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect((self.host, self.port))
-            print("Consumer: connected to producer")
+            print("Connected to producer")
             while True:
                 data = s.recv(1024)
                 if not data:
                     break
                 for line in data.decode("utf-8").splitlines():
-                    order = MarketOrder(**json.loads(line))
+                    order = json.loads(line)
                     print(f"Consumed: {order}")
 
-    def produce(self, data: Iterable[MarketOrder], interval: float = 0.1):
+    def produce(
+        self,
+        data: Iterable[dict],
+        interval: float = 0.1,
+    ):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.bind((self.host, self.port))
             s.listen(1)
-            print("Producer: waiting for a connection...")
+            print("Waiting for a connection...")
             conn, addr = s.accept()
             with conn:
-                print(f"Producer: connected to {addr}")
+                print(f"Connected to {addr}")
                 for record in data:
-                    record_serialized = json.dumps(record.serialize())
+                    record_serialized = json.dumps(record)
                     conn.sendall(record_serialized.encode("utf-8") + b"\n")
                     print(f"Produced: {record}")
                     time.sleep(interval)
@@ -64,10 +64,7 @@ class RedisStream(Stream):
                 # messages = [(stream_name, [(message_id, {field: value, ...})])]
                 for stream, msgs in messages:
                     for msg_id, msg_data in msgs:
-                        deserialized_order = {
-                            k.decode(): v.decode() for k, v in msg_data.items()
-                        }
-                        order = MarketOrder(**deserialized_order)
+                        order = {k.decode(): v.decode() for k, v in msg_data.items()}
                         print(f"Consumed: {order}")
                         last_id = msg_id
             else:
@@ -76,11 +73,11 @@ class RedisStream(Stream):
 
     def produce(
         self,
-        data: Iterable[MarketOrder],
+        data: Iterable[dict],
         interval: float = 0.1,
         stream_key: str = "mystream",
     ):
         for record in data:
-            self.r.xadd(stream_key, record.serialize())
+            self.r.xadd(stream_key, record)
             print(f"Produced: {record}")
             time.sleep(interval)

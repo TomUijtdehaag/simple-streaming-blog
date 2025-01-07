@@ -25,7 +25,7 @@ class MarketOrder:
         return asdict(self)
 
 
-def simulate_market(size: int = 100) -> Generator[MarketOrder, None, None]:
+def simulate_market(size: int = 100) -> Generator[dict, None, None]:
     market = {
         Ticker.AAPL: 100.0,
         Ticker.MSFT: 200.0,
@@ -42,7 +42,7 @@ def simulate_market(size: int = 100) -> Generator[MarketOrder, None, None]:
 
         # simulate price change
         price = market[ticker]
-        new_price = market[ticker] + random.gauss(0.01, price * 0.1)
+        new_price = market[ticker] + random.gauss(0.01, price * 0.01)
         market[ticker] = new_price
 
         # simulate volume
@@ -52,9 +52,9 @@ def simulate_market(size: int = 100) -> Generator[MarketOrder, None, None]:
             ticker=ticker.value,
             price=new_price,
             volume=volume,
-        )
+        ).serialize()
 
 
 if __name__ == "__main__":
     for offer in simulate_market(10000):
-        print(offer.serialize())
+        print(offer)

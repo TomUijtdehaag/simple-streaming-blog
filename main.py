@@ -1,7 +1,7 @@
 from argparse import ArgumentParser
 from enum import Enum
 
-from src.datagen.market import simulate_market
+from src.datagen import simulate_market
 from src.streams import RedisStream, SocketStream, Stream
 
 
