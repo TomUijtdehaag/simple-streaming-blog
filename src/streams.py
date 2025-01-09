@@ -6,7 +6,7 @@ from typing import Iterable, Protocol
 import redis
 
 
-class Stream(Protocol):
+class Streamer(Protocol):
     def consume(self):
         pass
 
@@ -14,7 +14,7 @@ class Stream(Protocol):
         pass
 
 
-class SocketStream(Stream):
+class SocketStreamer(Streamer):
     def __init__(self, host: str = "127.0.0.1", port: int = 5000):
         self.host = host
         self.port = port
@@ -50,7 +50,7 @@ class SocketStream(Stream):
                     time.sleep(interval)
 
 
-class RedisStream(Stream):
+class RedisStreamer(Streamer):
     def __init__(self, host: str = "localhost", port: int = 6379):
         self.r = redis.Redis(host=host, port=port, db=0)
 
