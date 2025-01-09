@@ -2,7 +2,7 @@ from argparse import ArgumentParser
 from enum import Enum
 
 from src.datagen import simulate_market
-from src.streams import RedisStreamer, SocketStreamer, Streamer
+from src.streamers import RedisStreamer, SocketStreamer, Streamer
 
 
 class StreamerKinds(str, Enum):

@@ -1,17 +1,14 @@
 import json
 import socket
 import time
-from typing import Iterable, Protocol
+from typing import Generator, Iterable, Protocol
 
 import redis
 
 
 class Streamer(Protocol):
-    def consume(self):
-        pass
-
-    def produce(self, data: Iterable[dict], interval: float = 0.1, *args, **kwargs):
-        pass
+    def consume(self) -> Generator[dict, None, None]: ...
+    def produce(self, data: Iterable[dict], interval: float = 0.1, *args, **kwargs): ...
 
 
 class SocketStreamer(Streamer):
@@ -30,6 +27,7 @@ class SocketStreamer(Streamer):
                 for line in data.decode("utf-8").splitlines():
                     order = json.loads(line)
                     print(f"Consumed: {order}")
+                    yield order
 
     def produce(
         self,
@@ -54,19 +52,21 @@ class RedisStreamer(Streamer):
     def __init__(self, host: str = "localhost", port: int = 6379):
         self.r = redis.Redis(host=host, port=port, db=0)
 
-    def consume(self, stream_key: str = "mystream"):
+    def consume(self, stream_key: str = "mystream") -> Generator[dict, None, None]:
         last_id = "$"
 
         while True:
             # Block for new messages up to 5000 milliseconds (5 seconds)
             messages = self.r.xread({stream_key: last_id}, block=5000, count=1)
+
             if messages:
                 # messages = [(stream_name, [(message_id, {field: value, ...})])]
-                for stream, msgs in messages:
+                for _, msgs in messages:
                     for msg_id, msg_data in msgs:
                         order = {k.decode(): v.decode() for k, v in msg_data.items()}
                         print(f"Consumed: {order}")
                         last_id = msg_id
+                        yield order
             else:
                 print("No new messages; waiting...")
                 time.sleep(1)
