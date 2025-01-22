@@ -1,14 +1,7 @@
 from argparse import ArgumentParser
-from enum import Enum
 
 from src.datagen import simulate_market
-from src.streamers import RedisStreamer, SocketStreamer, Streamer
-
-
-class StreamerKinds(str, Enum):
-    SOCKET = "socket"
-    REDIS = "redis"
-
+from src.streamers import RedisStreamer, SocketStreamer, Streamer, StreamerKinds
 
 if __name__ == "__main__":
     argparser = ArgumentParser()

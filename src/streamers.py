@@ -1,13 +1,19 @@
 import json
 import socket
 import time
-from typing import Generator, Iterable, Protocol
+from enum import Enum
+from typing import Any, Generator, Iterable, Protocol
 
 import redis
 
 
+class StreamerKinds(str, Enum):
+    SOCKET = "socket"
+    REDIS = "redis"
+
+
 class Streamer(Protocol):
-    def consume(self) -> Generator[dict, None, None]: ...
+    def consume(self) -> Generator[dict, Any, Any]: ...
     def produce(self, data: Iterable[dict], interval: float = 0.1, *args, **kwargs): ...
 
 
@@ -29,11 +35,7 @@ class SocketStreamer(Streamer):
                     print(f"Consumed: {order}")
                     yield order
 
-    def produce(
-        self,
-        data: Iterable[dict],
-        interval: float = 0.1,
-    ):
+    def produce(self, data: Iterable[dict], interval: float = 0.1):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.bind((self.host, self.port))
             s.listen(1)
@@ -52,7 +54,7 @@ class RedisStreamer(Streamer):
     def __init__(self, host: str = "localhost", port: int = 6379):
         self.r = redis.Redis(host=host, port=port, db=0)
 
-    def consume(self, stream_key: str = "mystream") -> Generator[dict, None, None]:
+    def consume(self, stream_key: str = "mystream"):
         last_id = "$"
 
         while True:

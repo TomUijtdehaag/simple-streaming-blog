@@ -41,8 +41,7 @@ def simulate_market(size: int = 100) -> Generator[dict, None, None]:
         ticker = random.choice(list(Ticker))
 
         # simulate price change
-        price = market[ticker]
-        new_price = market[ticker] + random.gauss(0.01, price * 0.01)
+        new_price = market[ticker] + random.gauss(0.01, market[ticker] * 0.01)
         market[ticker] = new_price
 
         # simulate volume
